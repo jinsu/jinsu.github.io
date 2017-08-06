@@ -218,7 +218,6 @@ window.onload = function() {
     // from js/input.js right before app.js
     function update(dt) {
         // Speed in % of screen pixel per second
-        console.log('camera x ' + camera.x);
         var maxSpeed = 300;
         var scale = maxSpeed / 100 / canvas.width;
         var starSpeedPct = camera.x * scale;
