@@ -57,10 +57,14 @@ window.onload = function() {
     var initialCanvasWidth = canvas.width = 320;
     var initialCanvasHeight = canvas.height = 480;
     mainContainer.appendChild(canvas);
+    GameInput.initTouch(canvas);
 
     infoContainer.addEventListener('click', function(ev) {
         infoContainer.classList.add('hidden');
     });
+    setTimeout(function() {
+      infoContainer.classList.add('hidden');
+    }, 5000);
 
     function Point(x, y) {
       this.x = x;

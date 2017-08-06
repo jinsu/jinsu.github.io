@@ -34,8 +34,14 @@ p {
     bottom: 0;
 }
 
-#install.hidden, div.info.hidden {
+#install.hidden {
     display: none;
+}
+
+div.info.hidden {
+  opacity: 0;
+  transition: opacity .3s 1s;
+  visibility: hidden;
 }
 
 canvas {
