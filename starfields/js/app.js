@@ -59,10 +59,14 @@ window.onload = function() {
     var initialCanvasHeight = canvas.height = 400;
     ctx.translate(canvas.width / 2, canvas.height / 2);
     mainContainer.appendChild(canvas);
+    GameInput.initTouch(canvas);
 
     infoContainer.addEventListener('click', function(ev) {
         infoContainer.classList.add('hidden');
     });
+    setTimeout(function() {
+        infoContainer.classList.add('hidden');
+    }, 5000);
 
     var constants = {
       root2: Math.sqrt(2),
@@ -111,19 +115,18 @@ window.onload = function() {
       var mPos = getMousePos(canvas, event);
       camera.x = mPos.x;
       camera.y = mPos.y;
+      boundCamera(camera);
     }, false);
 
-    document.addEventListener('keydown', function(e) {
-      if (e.keyCode == 40) {
-        env.starColor += 1;
-        env.starColor = env.starColor % env.colorBand.length;
-      } else if (e.keyCode = 38) {
-        env.starColor -= 1; 
-        if (env.starColor < 0) {
-          env.starColor += env.colorBand.length;
-        }
-      }
-    });
+    function handleTouch(event) {
+      var pos = getTouchPos(canvas, event);
+      camera.x = pos.x;
+      camera.y = pos.y;
+      boundCamera(camera);
+    }
+    canvas.addEventListener('touchmove', handleTouch, false);
+    canvas.addEventListener('touchstart', handleTouch, false);
+    canvas.addEventListener('touchend', handleTouch, false);
 
     //Initially resize the game canvas.
     resize();
@@ -141,6 +144,29 @@ window.onload = function() {
         x: evt.clientX - rect.left,
         y: evt.clientY - rect.top
       };
+    }
+
+    function getTouchPos(canvas, evt) {
+      var rect = canvas.getBoundingClientRect();
+      var touches = evt.changedTouches;
+      return {
+        x: touches[0].pageX - rect.left,
+        y: touches[0].pageY - rect.top
+      }
+    }
+
+    function boundCamera(camera) {
+      if (camera.x < 0) {
+        camera.x = 0;
+      } else if (camera.x > canvas.width) {
+        camera.x = canvas.width;
+      }
+
+      if (camera.y < 0) {
+        camera.y = 0;
+      } else if (camera.y > canvas.height) {
+        camera.y = canvas.height;
+      }
     }
 
     function getRandomArbitrary(min, max) {
@@ -167,7 +193,7 @@ window.onload = function() {
 
     // Reset game to original state
     function reset() {
-        camera.x = 0;
+        camera.x = 50;
         camera.y = 0;
         for(var i = 0; i < env.numStars; i++) {
           var pos = getRandomPos(env);
@@ -192,16 +218,23 @@ window.onload = function() {
     // from js/input.js right before app.js
     function update(dt) {
         // Speed in % of screen pixel per second
+        console.log('camera x ' + camera.x);
         var maxSpeed = 300;
         var scale = maxSpeed / 100 / canvas.width;
         var starSpeedPct = camera.x * scale;
 
         if(GameInput.isDown('DOWN')) {
-            // dt is the number of seconds passed, so multiplying by
-            // the speed gives you the number of pixels to move
+          // dt is the number of seconds passed, so multiplying by
+          // the speed gives you the number of pixels to move
+          env.starColor += 1;
+          env.starColor = env.starColor % env.colorBand.length;
         }
 
         if(GameInput.isDown('UP')) {
+          env.starColor -= 1; 
+          if (env.starColor < 0) {
+            env.starColor += env.colorBand.length;
+          }
         }
 
         if(GameInput.isDown('LEFT')) {

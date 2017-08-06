@@ -127,7 +127,6 @@ var GameInput = (function() {
     var touches = evt.changedTouches;
 
     for (var i = 0; i < 1; i++) {  // for now, take one finger touch
-      var color = colorForTouch(touches[i]);
       var idx = ongoingTouchIndexById(touches[i].identifier);
 
       if (idx >= 0) {
