@@ -77,8 +77,40 @@ window.onload = function() {
 
     window.addEventListener('resize', resize);
 
+    canvas.addEventListener('click', function(event) {
+      var mPos = getMousePos(canvas, event);
+      var point = new Point(
+        Math.floor(mPos.relX * canvas.width),
+        Math.floor(mPos.relY * canvas.height),
+        5,
+        false
+      );
+      clickContainers.push(point);
+    });
+    var mousePressed = false;
+    canvas.addEventListener('mousedown', function(event) {
+      mousePressed = true;
+    });
+    canvas.addEventListener('mouseup', function(event) {
+      mousePressed = false;
+    });
+
+    canvas.addEventListener('mousemove', function(event) {
+      if (mousePressed) {
+      var mPos = getMousePos(canvas, event);
+      var point = new Point(
+        Math.floor(mPos.relX * canvas.width),
+        Math.floor(mPos.relY * canvas.height),
+        5,
+        false
+      );
+      clickContainers.push(point);
+      }
+    });
+
     // Initialize board variables
     var rainDrops = undefined;
+    var clickContainers = undefined;
     var numRainDrops = 200;
     var radiusStart = 4;
     var dropSpeed = canvas.height / 10;
@@ -92,6 +124,13 @@ window.onload = function() {
     main();
 
     // Components
+    //
+    function Point(x, y, s, hit) {
+      this.x = x;
+      this.y = y;
+      this.size = s;
+      this.hit = hit;
+    }
     function Drop(x, y, z, r) {
       this.x = x;
       this.y = y;
@@ -104,9 +143,24 @@ window.onload = function() {
       return Math.floor(Math.random() * (max - min + 1) + min);
     }
 
+    function getMousePos(canvas, evt) {
+      var rect = canvas.getBoundingClientRect();
+      console.log(rect);
+      console.log(evt.clientX, evt.clientY);
+      var x = evt.clientX - rect.left;
+      var y = evt.clientY - rect.top;
+      return {
+        x: evt.clientX - rect.left,
+        y: evt.clientY - rect.top,
+        relX: x / rect.width,
+        relY: y / rect.height
+      };
+    }
+
     // Reset game to original state
     function reset() {
       rainDrops = [];
+      clickContainers = [];
       var i;
       for (i = 0; i < numRainDrops; i++) {
         var randomX = randomNumberFromInterval(0, canvas.width);
@@ -157,6 +211,19 @@ window.onload = function() {
           var drop = rainDrops[i];
           var yMultiplier = 1 + Math.log(1 + (drop.y / (canvas.height / 8)));
           drop.y += dropSpeed * yMultiplier * dt;
+
+          var j;
+          for (j = 0; j < clickContainers.length; j++) {
+            var box = clickContainers[j];
+            if (box.hit) {
+              continue;
+            }
+            if (drop.x >= box.x - box.size && drop.x <= box.x + box.size &&
+                drop.y >= box.y - box.size && drop.y <= box.y + box.size
+               ) {
+              box.hit = true;
+            }
+          }
           if (drop.y + drop.radius >= canvas.height) {
             drop.x = randomNumberFromInterval(0, canvas.width);
             drop.y = 0;
@@ -196,6 +263,17 @@ window.onload = function() {
           // draw rain droplet
           ctx.beginPath();
           ctx.arc(drop.x, drop.y, drop.radius * (1 - drop.z), 0, 2 * Math.PI);
+          ctx.fillStyle = 'purple';
+          ctx.fill();
+        }
+
+        for (i = 0; i < clickContainers.length; i++) {
+          var box = clickContainers[i];
+          if (!box.hit) {
+            continue;
+          }
+          ctx.beginPath();
+          ctx.arc(box.x, box.y, box.size, 0, 2 * Math.PI);
           ctx.fillStyle = 'purple';
           ctx.fill();
         }
