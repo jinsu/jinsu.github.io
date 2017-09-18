@@ -7,6 +7,7 @@ var GameInput = (function() {
 
   var debug = false;
 
+  initListeners();
   return {
     isDown: isDown,
     initTouch: initTouch
@@ -27,6 +28,14 @@ var GameInput = (function() {
         key = 'RIGHT'; break;
       case 40:
         key = 'DOWN'; break;
+      case 72: // h
+        key = 'LEFT'; break;
+      case 74: // j
+        key = 'DOWN'; break;
+      case 75: // k
+        key = 'UP'; break;
+      case 76: // l
+        key = 'RIGHT'; break;
       default:
         // Convert ASCII codes to letters
         key = String.fromCharCode(event.keyCode);
@@ -35,17 +44,19 @@ var GameInput = (function() {
     pressedKeys[key] = status;
   }
 
-  document.addEventListener('keydown', function(e) {
-    setKey(e, true);
-  });
+  function initListeners() {
+    document.addEventListener('keydown', function(e) {
+      setKey(e, true);
+    });
 
-  document.addEventListener('keyup', function(e) {
-    setKey(e, false);
-  });
+    document.addEventListener('keyup', function(e) {
+      setKey(e, false);
+    });
 
-  window.addEventListener('blur', function() {
-    pressedKeys = {};
-  });
+    window.addEventListener('blur', function() {
+      pressedKeys = {};
+    });
+  }
 
 
   function isDown(key) {
@@ -91,7 +102,7 @@ var GameInput = (function() {
         pressedKeys['RIGHT'] = false;
         pressedKeys['UP'] = false;
         pressedKeys['DOWN'] = false;
-        
+
         if (Math.abs(xDiff) > Math.abs(yDiff)) {  // most siginificant
           log('xDiff: ' + xDiff);
           if (Math.abs(xDiff) < pixelThreshold) {
@@ -119,7 +130,7 @@ var GameInput = (function() {
         log("can't figure out which touch to continue");
       }
     }
-  } 
+  }
 
   function handleEnd(evt) {
     evt.preventDefault();
