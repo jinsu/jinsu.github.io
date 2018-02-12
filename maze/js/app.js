@@ -80,7 +80,9 @@ window.onload = function() {
     var maze = {
       generated: false,
       cells: [],
-      start: [0, 0]
+      start: [0, 0],
+      adjacentEdges: [],
+      visitedNodes: []
     };
 
     var player = {
@@ -115,8 +117,21 @@ window.onload = function() {
       return Math.floor(Math.random() * (max - min + 1) + min);
     }
 
+    function posString(i, j) {
+      return i + "," + j;
+    }
+
     function stepGenerate() {
       var cells = maze.cells;
+      var curr = maze.generation.current;
+      var neighbors = maze.adjacentEdges[curr[0]][curr[1]];
+      // get current neighbor
+      var unvisited = neighbors.filter(function(e) {
+        return e in maze.visitedNodes[curr[0]][curr[1]];
+      });
+      // pick random current neighbor not visited
+      // breakdown wall between curr and random neighbor
+      // backtrack until back to beginning
     }
 
     // Reset game to original state
@@ -124,20 +139,52 @@ window.onload = function() {
         var i, j;
         // generate random start position
 
+        var start = [randomNumberFromInterval(0, config.rows - 1), randomNumberFromInterval(0, config.cols - 1)];
         maze = {
           generated: false,
           cells: [],
-          start: [randomNumberFromInterval(0, config.rows - 1), randomNumberFromInterval(0, config.cols - 1)]
+          start: start,
+          adjacentEdges: [],
+          visitedNodes: [],
+          generation: {
+            current: start
+          },
         };
         for(i = 0; i < config.rows; i++) {
           col = [];
+          adjacentCol = [];
+          visitedCol = [];
           for(j = 0; j < config.cols; j++) {
             col.push(new Cell());
+
+            var visited = {};
+            visitedCol.push(visited);
+
+            var adjacents = [];
+            if (i > 0) {
+              adjacents.push(posString(i - 1, j));
+            }
+            if (i + 1 < config.rows) {
+              adjacents.push(posString(i + 1, j));
+            }
+            if (j > 0) {
+              adjacents.push(posString(i, j - 1));
+            }
+            if (j + 1 < config.cols) {
+              adjacents.push(posString(i, j + 1));
+            }
+
+            adjacentCol.push(adjacents);
           }
           maze.cells.push(col);
+          maze.adjacentEdges.push(adjacentCol);
+          maze.visitedNodes.push(visitedCol);
         }
+
         player.x = maze.start[0];
         player.y = maze.start[1];
+
+        console.log(maze);
     }
 
     // Pause and unpause
@@ -157,7 +204,8 @@ window.onload = function() {
     // from js/input.js right before app.js
     function update(dt) {
         if (!maze.generated) {
-          stepGenerate()
+          stepGenerate();
+          return
         }
         // Speed in pixels per second
         var playerSpeed = 10;
