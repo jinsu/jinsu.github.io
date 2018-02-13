@@ -121,17 +121,63 @@ window.onload = function() {
       return i + "," + j;
     }
 
+    function strToPos(posStr) {
+      return posStr.split(',').map(function(e) { return parseInt(e); });
+    }
+
+    function removeWall(fromCell, toCell) {
+      if (fromCell[0] + 1 == toCell[0] && fromCell[1] == toCell[1]) {
+        // right
+        maze.cells[fromCell[0]][fromCell[1]].right = false;
+        maze.cells[toCell[0]][toCell[1]].left = false;
+      } else if (fromCell[0] - 1 == toCell[0] && fromCell[1] == toCell[1]) {
+        // left
+        maze.cells[fromCell[0]][fromCell[1]].left = false;
+        maze.cells[toCell[0]][toCell[1]].right = false;
+      } else if (fromCell[0] == toCell[0] && fromCell[1] + 1 == toCell[1]) {
+        // bottom
+        maze.cells[fromCell[0]][fromCell[1]].bottom = false;
+        maze.cells[toCell[0]][toCell[1]].top = false;
+      } else if (fromCell[0] == toCell[0] && fromCell[1] - 1 == toCell[1]) {
+        // top
+        maze.cells[fromCell[0]][fromCell[1]].top = false;
+        maze.cells[toCell[0]][toCell[1]].bottom = false;
+      } else {
+        console.log('Error: ', fromCell, toCell, 'are not next to each other');
+      }
+    }
+
     function stepGenerate() {
       var cells = maze.cells;
       var curr = maze.generation.current;
       var neighbors = maze.adjacentEdges[curr[0]][curr[1]];
       // get current neighbor
-      var unvisited = neighbors.filter(function(e) {
-        return e in maze.visitedNodes[curr[0]][curr[1]];
+      console.log('neighbors', neighbors, maze.visitedNodes[curr[0]][curr[1]]);
+      var unvisitedNodes = neighbors.filter(function(e) {
+        return !(e in maze.visitedNodes[curr[0]][curr[1]]);
       });
-      // pick random current neighbor not visited
-      // breakdown wall between curr and random neighbor
-      // backtrack until back to beginning
+      console.log(unvisitedNodes);
+      var len = unvisitedNodes.length
+      if (len < 1) {
+        // backtrack until back to beginning
+        console.log('backtrack');
+        maze.generated = true;
+        // TODO: backtrack
+      } else {
+        // pick random current neighbor not visited
+        var nextIx = len > 1 ? randomNumberFromInterval(0, len - 1) : 0;
+        var next = strToPos(unvisitedNodes[nextIx]);
+        console.log(unvisitedNodes[nextIx], nextIx, next);
+        // breakdown wall between curr and random neighbor
+        removeWall(curr, next);
+        // node as visited
+        maze.visitedNodes[curr[0]][curr[1]][unvisitedNodes[nextIx]] = true;
+        maze.generation.current = next;
+      } 
+      console.log('step end', maze.visitedNodes[curr[0]][curr[1]]);
+      if (curr[0] > 20 && curr[1] > 20) {
+        maze.generated = true;
+      }
     }
 
     // Reset game to original state
