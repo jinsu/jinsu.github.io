@@ -68,26 +68,27 @@ window.onload = function() {
       this.bottom = true;
       this.left = true;
       this.right = true;
+      this.backtrack = null;
     }
 
     // The maze's state
     var config = {
-      rows: 30,
-      cols: 30,
+      rows: 31,
+      cols: 31,
       cellSize: 10
     };
 
     var maze = {
       generated: false,
       cells: [],
-      start: [0, 0],
+      start: [1, 1],
       adjacentEdges: [],
       visitedNodes: []
     };
 
     var player = {
-        x: 0,
-        y: 0,
+        x: 1,
+        y: 1,
         sizeX: config.cellSize / 2,
         sizeY: config.cellSize / 2
     };
@@ -126,20 +127,32 @@ window.onload = function() {
     }
 
     function removeWall(fromCell, toCell) {
-      if (fromCell[0] + 1 == toCell[0] && fromCell[1] == toCell[1]) {
+      if (fromCell[0] + 2 == toCell[0] && fromCell[1] == toCell[1]) {
         // right
+        var wall = maze.cells[fromCell[0] + 1][fromCell[1]];
+        wall.left = false;
+        wall.right = false;
         maze.cells[fromCell[0]][fromCell[1]].right = false;
         maze.cells[toCell[0]][toCell[1]].left = false;
-      } else if (fromCell[0] - 1 == toCell[0] && fromCell[1] == toCell[1]) {
+      } else if (fromCell[0] - 2 == toCell[0] && fromCell[1] == toCell[1]) {
         // left
+        var wall = maze.cells[fromCell[0] - 1][fromCell[1]];
+        wall.left = false;
+        wall.right = false;
         maze.cells[fromCell[0]][fromCell[1]].left = false;
         maze.cells[toCell[0]][toCell[1]].right = false;
-      } else if (fromCell[0] == toCell[0] && fromCell[1] + 1 == toCell[1]) {
+      } else if (fromCell[0] == toCell[0] && fromCell[1] + 2 == toCell[1]) {
         // bottom
+        var wall = maze.cells[fromCell[0]][fromCell[1] + 1];
+        wall.top = false;
+        wall.bottom = false;
         maze.cells[fromCell[0]][fromCell[1]].bottom = false;
         maze.cells[toCell[0]][toCell[1]].top = false;
-      } else if (fromCell[0] == toCell[0] && fromCell[1] - 1 == toCell[1]) {
+      } else if (fromCell[0] == toCell[0] && fromCell[1] - 2 == toCell[1]) {
         // top
+        var wall = maze.cells[fromCell[0]][fromCell[1] - 1];
+        wall.top = false;
+        wall.bottom = false;
         maze.cells[fromCell[0]][fromCell[1]].top = false;
         maze.cells[toCell[0]][toCell[1]].bottom = false;
       } else {
@@ -152,40 +165,53 @@ window.onload = function() {
       var curr = maze.generation.current;
       var neighbors = maze.adjacentEdges[curr[0]][curr[1]];
       // get current neighbor
-      console.log('neighbors', neighbors, maze.visitedNodes[curr[0]][curr[1]]);
+      // console.log('neighbors', neighbors, maze.visitedNodes[curr[0]][curr[1]]);
       var unvisitedNodes = neighbors.filter(function(e) {
         return !(e in maze.visitedNodes[curr[0]][curr[1]]);
       });
-      console.log(unvisitedNodes);
+      // console.log(unvisitedNodes);
       var len = unvisitedNodes.length
       if (len < 1) {
         // backtrack until back to beginning
-        console.log('backtrack');
-        maze.generated = true;
-        // TODO: backtrack
+        if (cells[curr[0]][curr[1]].backtrack === null) {
+          console.log('END:', maze.generation);
+          maze.generated = true;
+          return
+        }
+        maze.generation.current = cells[curr[0]][curr[1]].backtrack;
       } else {
         // pick random current neighbor not visited
         var nextIx = len > 1 ? randomNumberFromInterval(0, len - 1) : 0;
         var next = strToPos(unvisitedNodes[nextIx]);
-        console.log(unvisitedNodes[nextIx], nextIx, next);
+        // console.log(unvisitedNodes[nextIx], nextIx, next);
         // breakdown wall between curr and random neighbor
         removeWall(curr, next);
         // node as visited
+        if (cells[next[0]][next[1]].backtrack === null) { 
+          cells[next[0]][next[1]].backtrack = curr;
+        }
         maze.visitedNodes[curr[0]][curr[1]][unvisitedNodes[nextIx]] = true;
         maze.generation.current = next;
       } 
-      console.log('step end', maze.visitedNodes[curr[0]][curr[1]]);
-      if (curr[0] > 20 && curr[1] > 20) {
-        maze.generated = true;
-      }
+      // console.log('step end', maze.visitedNodes[curr[0]][curr[1]]);
     }
 
     // Reset game to original state
     function reset() {
         var i, j;
         // generate random start position
-
-        var start = [randomNumberFromInterval(0, config.rows - 1), randomNumberFromInterval(0, config.cols - 1)];
+        var r = randomNumberFromInterval(0, config.rows - 1);
+        if (r % 2 == 0) {
+          var diff = (r == config.rows - 1) ? -1 : 1;
+          r += diff;
+        }
+        var c = randomNumberFromInterval(0, config.cols - 1);
+        if (c % 2 == 0) {
+          var diff = (c == config.cols - 1) ? -1 : 1;
+          c += diff;
+        }
+        var start = [r, c];
+        var startPosStr = posString(r, c);
         maze = {
           generated: false,
           cells: [],
@@ -200,27 +226,41 @@ window.onload = function() {
           col = [];
           adjacentCol = [];
           visitedCol = [];
+          var rowEven = i % 2 == 0;
           for(j = 0; j < config.cols; j++) {
+            var colEven = j % 2 == 0;
             col.push(new Cell());
 
             var visited = {};
             visitedCol.push(visited);
+            if (
+                (i + 2 == maze.start[0] && j == maze.start[1])
+                || (i - 2 == maze.start[0] && j == maze.start[1])
+                || (i == maze.start[0] && j + 2 == maze.start[1])
+                || (i == maze.start[0] && j - 2 == maze.start[1])
+               ) {
+              visited[startPosStr] = true;
+            }
 
             var adjacents = [];
-            if (i > 0) {
-              adjacents.push(posString(i - 1, j));
-            }
-            if (i + 1 < config.rows) {
-              adjacents.push(posString(i + 1, j));
-            }
-            if (j > 0) {
-              adjacents.push(posString(i, j - 1));
-            }
-            if (j + 1 < config.cols) {
-              adjacents.push(posString(i, j + 1));
+            adjacentCol.push(adjacents);
+
+            if (rowEven || colEven) {
+              continue;
             }
 
-            adjacentCol.push(adjacents);
+            if (i > 1) {
+              adjacents.push(posString(i - 2, j));
+            }
+            if (i + 2 < config.rows) {
+              adjacents.push(posString(i + 2, j));
+            }
+            if (j > 1) {
+              adjacents.push(posString(i, j - 2));
+            }
+            if (j + 2 < config.cols) {
+              adjacents.push(posString(i, j + 2));
+            }
           }
           maze.cells.push(col);
           maze.adjacentEdges.push(adjacentCol);
@@ -300,6 +340,13 @@ window.onload = function() {
             cell.bottom ? ctx.lineTo(bottomLeft[0], bottomLeft[1]) : ctx.moveTo(bottomLeft[0], bottomLeft[1]);
             cell.left ? ctx.lineTo(topLeft[0], topLeft[1]) : ctx.moveTo(topLeft[0], topLeft[1]);
             ctx.stroke();
+
+            if (!maze.generated) {
+              if (maze.generation.current[0] == i && maze.generation.current[1] == j) {
+                ctx.fillStyle = 'orange';
+                ctx.fillRect(config.cellSize * (i + 0.25), config.cellSize * (j + 0.25), player.sizeX, player.sizeY);
+              }
+            }
           }
         }
 
