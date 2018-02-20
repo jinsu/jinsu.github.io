@@ -69,12 +69,13 @@ window.onload = function() {
       this.left = true;
       this.right = true;
       this.backtrack = null;
+      this.prev = null;
     }
 
     // The maze's state
     var config = {
-      rows: 31,
-      cols: 31,
+      rows: 9,
+      cols: 9,
       cellSize: 10
     };
 
@@ -83,7 +84,7 @@ window.onload = function() {
       cells: [],
       start: [1, 1],
       adjacentEdges: [],
-      visitedNodes: []
+      visitedNodes: {},
     };
 
     var player = {
@@ -167,18 +168,26 @@ window.onload = function() {
       // get current neighbor
       // console.log('neighbors', neighbors, maze.visitedNodes[curr[0]][curr[1]]);
       var unvisitedNodes = neighbors.filter(function(e) {
-        return !(e in maze.visitedNodes[curr[0]][curr[1]]);
+        return !(e in maze.visitedNodes);
       });
       // console.log(unvisitedNodes);
       var len = unvisitedNodes.length
       if (len < 1) {
         // backtrack until back to beginning
-        if (cells[curr[0]][curr[1]].backtrack === null) {
-          console.log('END:', maze.generation);
+        if (curr[0] == maze.start[0] && curr[1] == maze.start[1]
+            && maze.generation.totalCells === Object.keys(maze.visitedNodes).length) {
+          console.log('END:', maze);
           maze.generated = true;
+          var node = cells[curr[0]][curr[1]];
+          maze.solution = [curr];
+          while(node.prev !== null) {
+            maze.solution.push(node.prev);
+            node = cells[node.prev[0]][node.prev[1]];
+          }
           return
         }
         maze.generation.current = cells[curr[0]][curr[1]].backtrack;
+        cells[maze.generation.current[0]][maze.generation.current[1]].prev = curr;
       } else {
         // pick random current neighbor not visited
         var nextIx = len > 1 ? randomNumberFromInterval(0, len - 1) : 0;
@@ -190,9 +199,10 @@ window.onload = function() {
         if (cells[next[0]][next[1]].backtrack === null) { 
           cells[next[0]][next[1]].backtrack = curr;
         }
-        maze.visitedNodes[curr[0]][curr[1]][unvisitedNodes[nextIx]] = true;
+        maze.visitedNodes[unvisitedNodes[nextIx]] = true;
         maze.generation.current = next;
-      } 
+      }
+      maze.history.push(maze.generation.current);
       // console.log('step end', maze.visitedNodes[curr[0]][curr[1]]);
     }
 
@@ -217,30 +227,29 @@ window.onload = function() {
           cells: [],
           start: start,
           adjacentEdges: [],
-          visitedNodes: [],
+          visitedNodes: {},
           generation: {
-            current: start
+            current: start,
+            totalCells: (config.rows - 1) * (config.cols - 1) / 4,
           },
+          history: [],
         };
+        maze.visitedNodes[startPosStr] = true;
+
+        var debug = true;
+        if (debug) {
+          window.maze = maze;
+          window.config = config;
+          window.player = player;
+        }
+
         for(i = 0; i < config.rows; i++) {
           col = [];
           adjacentCol = [];
-          visitedCol = [];
           var rowEven = i % 2 == 0;
           for(j = 0; j < config.cols; j++) {
             var colEven = j % 2 == 0;
             col.push(new Cell());
-
-            var visited = {};
-            visitedCol.push(visited);
-            if (
-                (i + 2 == maze.start[0] && j == maze.start[1])
-                || (i - 2 == maze.start[0] && j == maze.start[1])
-                || (i == maze.start[0] && j + 2 == maze.start[1])
-                || (i == maze.start[0] && j - 2 == maze.start[1])
-               ) {
-              visited[startPosStr] = true;
-            }
 
             var adjacents = [];
             adjacentCol.push(adjacents);
@@ -264,7 +273,6 @@ window.onload = function() {
           }
           maze.cells.push(col);
           maze.adjacentEdges.push(adjacentCol);
-          maze.visitedNodes.push(visitedCol);
         }
 
         player.x = maze.start[0];
