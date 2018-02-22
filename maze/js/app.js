@@ -197,11 +197,11 @@ window.onload = function() {
 
         visited[node.getCrdKey()] = true;
         path.push(node);
-        if (unvisited.length > 1 && deadEnds.length + 1 > 2) {
+        if (unvisited.length !== 1 && deadEnds.length > 1) {
           continue;
         }
 
-        if (deadEnds.length + 1 === 2 && unvisited.length === 0) {
+        if (deadEnds.length === 1 && unvisited.length === 0) {
           otherPath = deadEnds[0][1];
           for (var i = otherPath.length - 1; i >= 0; i--) {
             path.push(otherPath[i]);
