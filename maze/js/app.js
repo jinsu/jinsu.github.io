@@ -104,8 +104,8 @@ window.onload = function() {
 
     // The maze's state
     var config = {
-      rows: 9,
-      cols: 9,
+      rows: 31,
+      cols: 31,
       cellSize: 10
     };
 
