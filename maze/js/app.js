@@ -116,6 +116,7 @@ window.onload = function() {
       end: [1, 1],
       adjacentEdges: [],
       visitedNodes: {},
+      path: [],
     };
 
     var player = {
@@ -178,7 +179,7 @@ window.onload = function() {
             wallCount++;
           }
           if (wallCount === 1) {
-            var n = [cell, []]
+            var n = [cell, [], {}]
             deadEnds.push(n);
           }
         }
@@ -190,17 +191,21 @@ window.onload = function() {
         var nodePair = deadEnds.shift();
         var node = nodePair[0];
         var path = nodePair[1];
+        var pathVisited = nodePair[2];
         var connected = node.connectedCells(maze);;
         var unvisited = connected.filter(function(e) {
-          return !(e.getCrdKey() in visited);
+          return !(e.getCrdKey() in visited || e.getCrdKey() in pathVisited);
         });
 
-        visited[node.getCrdKey()] = true;
-        path.push(node);
-        if (unvisited.length !== 1 && deadEnds.length > 1) {
+        
+        if (unvisited.length > 1 && deadEnds.length > 1) {
+          for (var i = 0; i < path.length; i++) {
+            visited[path[i].getCrdKey()] = true;
+          }
           continue;
         }
-
+        pathVisited[node.getCrdKey()] = true;
+        path.push(node);
         if (deadEnds.length === 1 && unvisited.length === 0) {
           otherPath = deadEnds[0][1];
           for (var i = otherPath.length - 1; i >= 0; i--) {
@@ -208,7 +213,8 @@ window.onload = function() {
           }
           return path;
         }
-        deadEnds.push([unvisited[0], path]);
+
+        deadEnds.push([unvisited[0], path, pathVisited]);
       }
     }
 
@@ -271,6 +277,7 @@ window.onload = function() {
           var path = findStartEnd();
           maze.start = path[0].getCrd();;
           maze.end = path[path.length - 1].getCrd();
+          maze.path = path;
           player.x = maze.start[0];
           player.y = maze.start[1];
           return
@@ -321,6 +328,7 @@ window.onload = function() {
             totalCells: (config.rows - 1) * (config.cols - 1) / 4,
           },
           history: [],
+          path: [],
         };
         maze.visitedNodes[startPosStr] = true;
 
@@ -458,6 +466,14 @@ window.onload = function() {
           } else if (!end.right) {
             ctx.fillRect(config.cellSize * (end.x + 0.1), config.cellSize * (end.y + 0.2), 0.2 * config.cellSize, 0.6 * config.cellSize);
           }
+        }
+
+        ctx.fillStyle = 'blue';
+        for (i = 0; i < maze.path.length; i++) {
+          var cell = maze.path[i];
+          ctx.beginPath();
+          ctx.arc(config.cellSize * (cell.x + 0.5), config.cellSize * (cell.y + 0.5), config.cellSize * 0.1, 0, 2 * Math.PI);
+          ctx.fill();
         }
 
         ctx.fillStyle = 'green';
