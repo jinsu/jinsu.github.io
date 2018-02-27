@@ -104,8 +104,8 @@ window.onload = function() {
 
     // The maze's state
     var config = {
-      rows: 31,
-      cols: 31,
+      rows: 11,
+      cols: 11,
       cellSize: 10
     };
 
@@ -197,7 +197,7 @@ window.onload = function() {
           return !(e.getCrdKey() in visited || e.getCrdKey() in pathVisited);
         });
 
-        
+
         if (unvisited.length > 1 && deadEnds.length > 1) {
           for (var i = 0; i < path.length; i++) {
             visited[path[i].getCrdKey()] = true;
@@ -278,8 +278,8 @@ window.onload = function() {
           maze.start = path[0].getCrd();;
           maze.end = path[path.length - 1].getCrd();
           maze.path = path;
-          player.x = maze.start[0];
-          player.y = maze.start[1];
+          player.x = maze.start[0] + 0.25;
+          player.y = maze.start[1] + 0.25;
           return
         }
         maze.generation.current = cells[curr[0]][curr[1]].backtrack;
@@ -299,6 +299,44 @@ window.onload = function() {
       }
       maze.history.push(maze.generation.current);
     }
+
+    function getNearbyCells(newPos) {
+      // newPos[0] is x
+      // newPos[1] is y
+      var x = newPos[0];
+      var y = newPos[1];
+      var cells = {};
+      potentials = [
+        [Math.floor(x), Math.floor(y)],
+        [Math.floor(x + player.sizeX / config.cellSize), Math.floor(y)],
+        [Math.floor(x + player.sizeX / config.cellSize), Math.floor(y + player.sizeY / config.cellSize)],
+        [Math.floor(x), Math.floor(y + player.sizeY / config.cellSize)],
+      ]
+      for(var i = 0; i < potentials.length; i++) {
+        cells[posString(potentials[i])] = maze.cells[potentials[i][0]][potentials[i][1]];
+      }
+      return Object.values(cells);
+    };
+
+    function updatePlayerPosition(newPos, nearbyCells) {
+      var xy = [newPos[0], newPos[1]];
+      for(var i = 0; i < nearbyCells.length; i++) {
+        var cell = nearbyCells[i];
+        if (cell.y <= xy[1] && cell.y + 1 >= xy[1]) {
+          if (cell.right
+              && xy[0] <= cell.x + 1
+              && cell.x + 1 <= (xy[0] + player.sizeX / config.cellSize)) {
+            if (GameInput.isDown('RIGHT')) {
+              xy[0] = cell.x + player.sizeX / config.cellsize;
+            } else if (GameInput.isDown('LEFT')) {
+              xy[0] = cell.x + 1;
+            }
+          } else if (cell.left) {
+          }
+        }
+      }
+      return xy;
+    };
 
     // Reset game to original state
     function reset() {
@@ -371,8 +409,8 @@ window.onload = function() {
           maze.adjacentEdges.push(adjacentCol);
         }
 
-        player.x = maze.start[0];
-        player.y = maze.start[1];
+        player.x = maze.start[0] + 0.25;
+        player.y = maze.start[1] + 0.25;
     }
 
     // Pause and unpause
@@ -395,26 +433,40 @@ window.onload = function() {
           stepGenerate();
           return
         }
+
         // Speed in pixels per second
-        var playerSpeed = 10;
+        var playerSpeed = 5;
+
+        var newX = player.x;
+        var newY = player.y;
 
         if(GameInput.isDown('DOWN')) {
             // dt is the number of seconds passed, so multiplying by
             // the speed gives you the number of pixels to move
-            player.y += playerSpeed * dt;
+            newY += playerSpeed * dt;
+            newY = Math.min(newY, config.rows - 1 + player.sizeY / config.cellSize);
         }
 
         if(GameInput.isDown('UP')) {
-            player.y -= playerSpeed * dt;
+            newY -= playerSpeed * dt;
+            newY = Math.max(newY, 0);
         }
 
         if(GameInput.isDown('LEFT')) {
-            player.x -= playerSpeed * dt;
+            newX -= playerSpeed * dt;
+            newX = Math.max(newX, 0);
         }
 
         if(GameInput.isDown('RIGHT')) {
-            player.x += playerSpeed * dt;
+            newX += playerSpeed * dt;
+            newX = Math.min(newX, config.cols - 1 + player.sizeX / config.cellSize);
         }
+        var newPos = [newX, newY];
+        var nearbyCells = getNearbyCells(newPos);
+        newPos = updatePlayerPosition(newPos, nearbyCells);
+
+        player.x = newPos[0];
+        player.y = newPos[1];
 
         // You can pass any letter to `isDown`, in addition to DOWN,
         // UP, LEFT, RIGHT, and SPACE:
@@ -477,7 +529,7 @@ window.onload = function() {
         }
 
         ctx.fillStyle = 'green';
-        ctx.fillRect(config.cellSize * (player.x + 0.25), config.cellSize * (player.y + 0.25), player.sizeX, player.sizeY);
+        ctx.fillRect(config.cellSize * player.x, config.cellSize * player.y, player.sizeX, player.sizeY);
     }
 
     // The main game loop
