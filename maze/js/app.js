@@ -123,7 +123,13 @@ window.onload = function() {
         x: 1,
         y: 1,
         sizeX: config.cellSize / 2,
-        sizeY: config.cellSize / 2
+        sizeY: config.cellSize / 2,
+        pixelSizeX: function() {
+          return this.sizeX / config.cellSize;
+        },
+        pixelSizeY: function() {
+          return this.sizeY / config.cellSize;
+        }
     };
 
     // Don't run the game when the tab isn't visible
@@ -322,16 +328,25 @@ window.onload = function() {
       var xy = [newPos[0], newPos[1]];
       for(var i = 0; i < nearbyCells.length; i++) {
         var cell = nearbyCells[i];
-        if (cell.y <= xy[1] && cell.y + 1 >= xy[1]) {
+        if ((cell.y <= xy[1] && xy[1] <= cell.y + 1)
+            || (cell.y <= xy[1] + player.pixelSizeY() && xy[1] + player.pixelSizeY() <= cell.y + 1)){
           if (cell.right
               && xy[0] <= cell.x + 1
-              && cell.x + 1 <= (xy[0] + player.sizeX / config.cellSize)) {
+              && cell.x + 1 <= xy[0] + player.pixelSizeX()) {
             if (GameInput.isDown('RIGHT')) {
-              xy[0] = cell.x + player.sizeX / config.cellsize;
+              xy[0] = cell.x + player.pixelSizeX();
             } else if (GameInput.isDown('LEFT')) {
               xy[0] = cell.x + 1;
             }
-          } else if (cell.left) {
+          }
+          if (cell.left
+              && xy[0] <= cell.x
+              && cell.x <= (xy[0] + player.pixelSizeX())) {
+            if (GameInput.isDown('RIGHT')) {
+              xy[0] = cell.x - player.pixelSizeX();
+            } else if (GameInput.isDown('LEFT')) {
+              xy[0] = cell.x;
+            }
           }
         }
       }
