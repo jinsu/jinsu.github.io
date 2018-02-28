@@ -330,15 +330,17 @@ window.onload = function() {
         var cell = nearbyCells[i];
         if ((cell.y <= xy[1] && xy[1] <= cell.y + 1)
             || (cell.y <= xy[1] + player.pixelSizeY() && xy[1] + player.pixelSizeY() <= cell.y + 1)){
+          // right wall
           if (cell.right
               && xy[0] <= cell.x + 1
               && cell.x + 1 <= xy[0] + player.pixelSizeX()) {
             if (GameInput.isDown('RIGHT')) {
-              xy[0] = cell.x + player.pixelSizeX();
+              xy[0] = cell.x + 1 - player.pixelSizeX();
             } else if (GameInput.isDown('LEFT')) {
               xy[0] = cell.x + 1;
             }
           }
+          // left wall
           if (cell.left
               && xy[0] <= cell.x
               && cell.x <= (xy[0] + player.pixelSizeX())) {
@@ -346,6 +348,29 @@ window.onload = function() {
               xy[0] = cell.x - player.pixelSizeX();
             } else if (GameInput.isDown('LEFT')) {
               xy[0] = cell.x;
+            }
+          }
+        }
+        if ((cell.x <= xy[0] && xy[0] <= cell.x + 1)
+            || (cell.x <= xy[0] + player.pixelSizeX() && xy[0] + player.pixelSizeX() <= cell.x + 1)){
+          // bottom wall
+          if (cell.bottom
+              && xy[1] <= cell.y + 1
+              && cell.y + 1 <= xy[1] + player.pixelSizeY()) {
+            if (GameInput.isDown('DOWN')) {
+              xy[1] = cell.y + 1 - player.pixelSizeY();
+            } else if (GameInput.isDown('UP')) {
+              xy[1] = cell.y + 1;
+            }
+          }
+          // top wall
+          if (cell.top
+              && xy[1] <= cell.y
+              && cell.y <= (xy[1] + player.pixelSizeY())) {
+            if (GameInput.isDown('DOWN')) {
+              xy[1] = cell.y - player.pixelSizeY();
+            } else if (GameInput.isDown('UP')) {
+              xy[1] = cell.y;
             }
           }
         }
